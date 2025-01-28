@@ -9,6 +9,7 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # MQTT broker configuration
+mqtt_topic_time = '/model/98afbba7-754b-45f6-9ef0-6b270c6a21c8/drying_time'
 broker_address = "141.47.69.114"
 broker_port = 1883
 
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     client.connect(host=broker_address, port=broker_port)
 
     # Subscribe to all topics
-    client.subscribe('/model/98afbba7-754b-45f6-9ef0-6b270c6a21c8/drying_time')  # '#' means subscribe to all topics
+    client.subscribe(mqtt_topic_time)  # '#' means subscribe to all topics
 
     # Start MQTT Client in a separate thread
     mqtt_thread = threading.Thread(target=client.loop_forever)

@@ -9,6 +9,7 @@ from datetime import datetime
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # MQTT broker configuration
+mqtt_topic_mode = '/model/570c5583-8e04-487b-a490-601e62f2f812/operation_mode'
 broker_address = "141.47.69.114"
 broker_port = 1883
 
@@ -33,7 +34,7 @@ def on_message(client, userdata, msg):
     """Log and print all incoming MQTT messages."""
     try:
         message_content = msg.payload.decode()  # Decode the payload
-        logging.info(f"[{datetime.now()}] New Drying Time: {round(float(message_content), 1)} seconds")
+        logging.info(f"New Production Mode set: {message_content}")
     except ValueError as e:
         logging.error(f"[{datetime.now()}] Error decoding message on topic '{msg.topic}': {e}")
 
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     client.connect(host=broker_address, port=broker_port)
 
     # Subscribe to all topics
-    client.subscribe('/model/98afbba7-754b-45f6-9ef0-6b270c6a21c8/drying_time')  # '#' means subscribe to all topics
+    client.subscribe(mqtt_topic_mode)  # '#' means subscribe to all topics
 
     # Start MQTT Client in a separate thread
     mqtt_thread = threading.Thread(target=client.loop_forever)
