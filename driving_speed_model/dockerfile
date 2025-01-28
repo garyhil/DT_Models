@@ -1,0 +1,18 @@
+# Use the official Python image
+FROM python:3.12-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the script and requirements to the container
+COPY model.py .
+COPY requirements.txt .
+
+# Install required Python packages
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose ports if necessary (not needed for MQTT client but for future reference)
+# EXPOSE 1883
+
+# Run the script when the container starts
+CMD ["python", "model.py"]
