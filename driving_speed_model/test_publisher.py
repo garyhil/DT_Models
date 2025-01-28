@@ -7,7 +7,7 @@ import random
 # MQTT broker configuration
 broker_address = "141.47.69.114"
 broker_port = 1883
-topic_temp = '/model/d67cf3a3-4441-4191-bf0b-7d5192dd244c/human_detected'
+topic_temp = '/model/570c5583-8e04-487b-a490-601e62f2f812/renewable_energy'
 
 def get_new_values():
     temp = random.uniform(a=8.0, b=50.0)
@@ -23,9 +23,9 @@ def start_publisher():
     try:
         # Publish a message every 2 seconds
         while True:
-            bool_value = random.choice([True, False])
-            print(f"Human Detected: {bool_value}")
-            client.publish(topic_temp, str(bool_value))
+            energy_kW = random.uniform(a=0.0, b=100.0)
+            print(f"Current energy production: {round(energy_kW,1)} kW")
+            client.publish(topic_temp, str(energy_kW))
             time.sleep(2)  # Wait before publishing the next message
     except KeyboardInterrupt:
         print("Interrupt (CTRL+C) received, shutting down...")
