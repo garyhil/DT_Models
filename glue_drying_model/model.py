@@ -15,8 +15,9 @@ mqtt_topic_time = '/model/98afbba7-754b-45f6-9ef0-6b270c6a21c8/drying_time'
 mqtt_broker = '141.47.69.114'  # Update as needed
 mqtt_port = 1883  # Update as needed
 
-temp = 0.0  # Last received temperature value
-hum = 0.0   # Last received humidity value
+temp = None  # Last received temperature value
+hum = None   # Last received humidity value
+new_data_received = False  # Flag to track if new data was received
 
 # Callback on connection
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -34,18 +35,19 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 
 # Callback for MQTT messages
 def on_message(client, userdata, msg):
-    global temp
-    global hum
+    global temp, hum, new_data_received
     try:
-        if msg.topic == '/model/98afbba7-754b-45f6-9ef0-6b270c6a21c8/temperature':
+        if msg.topic == mqtt_topic_temp:
             temp = float(msg.payload.decode())
             logging.info(f'New Temperature Value Received: {round(temp, 1)} °C')
-        elif msg.topic == '/model/98afbba7-754b-45f6-9ef0-6b270c6a21c8/humidity':
+            new_data_received = True
+        elif msg.topic == mqtt_topic_hum:
             hum = float(msg.payload.decode())
             logging.info(f'New Humidity Value Received: {round(hum, 0)} %')
+            new_data_received = True
     except ValueError:
         logging.error('Error converting MQTT value')
-        
+
 def on_publish(client, userdata, mid):
     logging.info(f"Published message with mid: {mid}")
 
@@ -79,16 +81,20 @@ def calculate_optimal_glue_evaporation_time(temp, hum):
     return humidity_part + temperature_part
 
 def run_simulation():
-    global temp, hum
+    global temp, hum, new_data_received
 
     step_size = 10  # Simulation step size in seconds
 
     try:
         while True:
-            # Calculate the output value
-            evaporation_time = calculate_optimal_glue_evaporation_time(temp, hum)
-            client.publish(mqtt_topic_time, evaporation_time)
-            logging.info(f'Optimal Glue Evaporation Time: {round(evaporation_time, 1)} seconds')
+            # Check if new data was received
+            if new_data_received and temp is not None and hum is not None:
+                # Calculate the output value
+                evaporation_time = calculate_optimal_glue_evaporation_time(temp, hum)
+                client.publish(mqtt_topic_time, evaporation_time)
+                logging.info(f'Optimal Glue Evaporation Time: {round(evaporation_time, 1)} seconds')
+                # Reset the flag after publishing
+                new_data_received = False
 
             # Wait for the next simulation step
             time.sleep(step_size)
