@@ -1,10 +1,12 @@
-import paho.mqtt.client as mqtt
-import time
-import sys
-import math
-import random
-import logging
+import base64
 from datetime import datetime 
+import json
+import logging
+import math
+import paho.mqtt.client as mqtt
+import random
+import sys
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,9 +25,16 @@ def start_publisher():
     try:
         # Publish a message every 2 seconds
         while True:
+            route = {}
             bool = random.choice([True, False])
+            message = {
+                "route": route,
+                "data": bool
+            }
             logging.info(f"Human detected: {bool}")
-            client.publish(mqtt_topic_human, str(bool))
+            serialized_message = json.dumps(message)
+            encoded_message = base64.b64encode(serialized_message.encode('utf-8'))
+            client.publish(mqtt_topic_human, encoded_message)
             time.sleep(2)  # Wait before publishing the next message
     except KeyboardInterrupt:
         logging.info("Interrupt (CTRL+C) received, shutting down...")

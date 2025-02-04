@@ -1,9 +1,11 @@
+import base64
+from datetime import datetime
+import json
+import logging
+import math
 import paho.mqtt.client as mqtt
 import threading
 import time
-import math
-import logging
-from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,7 +41,9 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, message):
     try:
         # Decode the message payload
-        bool_value = message.payload.decode('utf-8').lower() == 'true'
+        decoded_message = base64.b64decode(message.payload).decode('utf-8')
+        deserialized_message = json.loads(decoded_message)
+        bool_value = deserialized_message.get("data")
         
         # Determine the speed based on the Boolean value
         speed = calculate_speed(bool_value)
