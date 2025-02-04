@@ -4,6 +4,8 @@ import sys
 import math
 import random
 import logging
+import json
+import base64
 from datetime import datetime 
 
 # Configure logging
@@ -24,8 +26,15 @@ def start_publisher():
         # Publish a message every 2 seconds
         while True:
             energy_kW = random.uniform(a=0.0, b=100.0)
+            route = {}
+            message = {
+                "route": route,
+                "data": energy_kW,
+            }
+            json_message = json.dumps(message)
+            encoded_message = base64.b64encode(json_message.encode('utf-8'))
             logging.info(f"Current energy produced: {round(energy_kW, 1)}")
-            client.publish(mqtt_topic_energy, float(energy_kW))
+            client.publish(mqtt_topic_energy, encoded_message)
             time.sleep(2)  # Wait before publishing the next message
     except KeyboardInterrupt:
         logging.info("Interrupt (CTRL+C) received, shutting down...")

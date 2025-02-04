@@ -3,6 +3,8 @@ import threading
 import time
 import logging
 from datetime import datetime 
+import base64
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -36,7 +38,9 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, message):
     try:
         # Decode the message payload
-        energy_kW = float(message.payload.decode('utf-8'))
+        decoded_payload = base64.b64decode(message.payload).decode('utf-8')
+        deserializes_message = json.loads(decoded_payload)
+        energy_kW = deserializes_message.get("data", {})
         logging.info(f"Received energy input: {energy_kW} kW")
 
         # Determine the operating mode
