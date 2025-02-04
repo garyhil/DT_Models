@@ -34,9 +34,9 @@ def on_message(client, userdata, msg):
     """Log and print all incoming MQTT messages."""
     try:
         message_content = msg.payload.decode()  # Decode the payload
-        logging.info(f"[{datetime.now()}] New Drying Time: {round(float(message_content), 1)} seconds")
+        logging.info(f"New Drying Time: {round(float(message_content), 1)} seconds")
     except ValueError as e:
-        logging.error(f"[{datetime.now()}] Error decoding message on topic '{msg.topic}': {e}")
+        logging.error(f"Error decoding message on topic '{msg.topic}': {e}")
 
 if __name__ == "__main__":
     client.on_connect = on_connect

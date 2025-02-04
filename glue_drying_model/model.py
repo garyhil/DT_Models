@@ -1,9 +1,9 @@
-import paho.mqtt.client as mqtt
-import threading
-import time
-import math
-import logging
+import base64
 from datetime import datetime
+import logging
+import json
+import math
+import paho.mqtt.client as mqtt
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -38,13 +38,21 @@ def on_message(client, userdata, msg):
     global temp, hum, new_data_received
     try:
         if msg.topic == mqtt_topic_temp:
-            temp = float(msg.payload.decode())
+            decoded_msg = base64.b64decode(msg.payload).decode('utf-8')
+            deserialize_msg = json.loads(decoded_msg)
+            temp = deserialize_msg.get("data")
             logging.info(f'New Temperature Value Received: {round(temp, 1)} °C')
-            new_data_received = True
         elif msg.topic == mqtt_topic_hum:
-            hum = float(msg.payload.decode())
+            decoded_msg = base64.b64decode(msg.payload).decode('utf-8')
+            deserialize_msg = json.loads(decoded_msg)
+            hum = deserialize_msg.get("data")            
             logging.info(f'New Humidity Value Received: {round(hum, 0)} %')
-            new_data_received = True
+        
+        # Calculate and publish the optimal glue evaporation time if both temp and hum are received
+        if temp is not None and hum is not None:
+            evaporation_time = calculate_optimal_glue_evaporation_time(temp, hum)
+            client.publish(mqtt_topic_time, evaporation_time)
+            logging.info(f'Optimal Glue Evaporation Time: {round(evaporation_time, 1)} seconds')
     except ValueError:
         logging.error('Error converting MQTT value')
 
@@ -61,11 +69,6 @@ client.connect(mqtt_broker, mqtt_port)
 client.subscribe(mqtt_topic_temp)
 client.subscribe(mqtt_topic_hum)
 
-# Start MQTT Client in a separate thread
-mqtt_thread = threading.Thread(target=client.loop_forever)
-mqtt_thread.daemon = True
-mqtt_thread.start()
-
 def calculate_humidity_part(humidity):
     """Calculate the humidity part based on the equation."""
     return 5.0 + 10.0 / (-1.0 - math.exp(0.1 * humidity - 4.0))
@@ -80,31 +83,12 @@ def calculate_optimal_glue_evaporation_time(temp, hum):
     temperature_part = calculate_temperature_part(temp)
     return humidity_part + temperature_part
 
-def run_simulation():
-    global temp, hum, new_data_received
-
-    step_size = 10  # Simulation step size in seconds
-
+if __name__ == '__main__':
     try:
-        while True:
-            # Check if new data was received
-            if new_data_received and temp is not None and hum is not None:
-                # Calculate the output value
-                evaporation_time = calculate_optimal_glue_evaporation_time(temp, hum)
-                client.publish(mqtt_topic_time, evaporation_time)
-                logging.info(f'Optimal Glue Evaporation Time: {round(evaporation_time, 1)} seconds')
-                # Reset the flag after publishing
-                new_data_received = False
-
-            # Wait for the next simulation step
-            time.sleep(step_size)
-
+        client.loop_forever()
     except KeyboardInterrupt:
         logging.info("Interrupt (CTRL+C) received, shutting down...")
     finally:
         client.loop_stop()  # Stop the MQTT loop
         client.disconnect()  # Disconnect from the broker
         logging.info("Simulation stopped.")
-
-if __name__ == '__main__':
-    run_simulation()
